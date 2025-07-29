@@ -12,9 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const { createFFmpeg, fetchFile } = FFmpeg;
   const ffmpeg = createFFmpeg({ log: true });
 
-  const uploadInput = document.getElementById('videoUpload');
-  // Input where users can paste a direct link to a video (e.g. YouTube). If provided, we'll attempt to fetch the video data.
-  const urlInput = document.getElementById('videoUrlInput');
+  // Separate inputs: file upload and URL input
+  const fileInput = document.getElementById('videoUpload');
+  const textInput = document.getElementById('videoUrlInput');
   const processButton = document.getElementById('processBtn');
   const progressBar = document.getElementById('progressBar');
   const progressElem = progressBar.querySelector('.progress');
@@ -28,10 +28,25 @@ document.addEventListener('DOMContentLoaded', () => {
     progressElem.style.width = `${(ratio * 100).toFixed(2)}%`;
   }
 
+  // When a user selects a file, clear the URL input and optionally display the file name
+  if (fileInput && textInput) {
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files && fileInput.files.length > 0) {
+        const selected = fileInput.files[0];
+        // Display the selected file name for clarity
+        textInput.value = '';
+        fileInput.nextElementSibling.textContent = selected.name;
+      } else {
+        // Reset label if no file selected
+        fileInput.nextElementSibling.textContent = 'Select file';
+      }
+    });
+  }
+
   processButton.addEventListener('click', async () => {
     // Validate that either a file or a URL has been provided
-    const fileSelected = uploadInput.files && uploadInput.files.length > 0;
-    const urlProvided = urlInput && urlInput.value.trim() !== '';
+    const fileSelected = fileInput && fileInput.files && fileInput.files.length > 0;
+    const urlProvided = textInput && textInput.value.trim() !== '';
     if (!fileSelected && !urlProvided) {
       alert('Please select a video to process or paste a video link.');
       return;
@@ -39,10 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let file;
     if (fileSelected) {
       // Use the uploaded file directly
-      file = uploadInput.files[0];
+      file = fileInput.files[0];
     } else {
       // Attempt to fetch the video from the provided URL
-      const videoUrl = urlInput.value.trim();
+      const videoUrl = textInput.value.trim();
       try {
         const response = await fetch(videoUrl);
         if (!response.ok) {

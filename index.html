@@ -503,19 +503,22 @@ footer {
         <h2>Get your short in seconds</h2>
         <p>Upload a video or paste a link and let Shortify do the rest. No sign‑up required.</p>
         <div class="upload-form">
-          <!-- Text input for a video link (e.g. YouTube) -->
+          <!-- File input for local uploads -->
+          <label class="file-input-label">
+            <input
+              type="file"
+              id="videoUpload"
+              accept="video/*"
+              aria-label="Upload your video"
+            />
+            <span>Select file</span>
+          </label>
+          <!-- Text input for a direct video link (e.g. YouTube) -->
           <input
             type="text"
             id="videoUrlInput"
-            placeholder="Paste video URL (e.g. YouTube)"
+            placeholder="Paste video URL (direct link)"
             aria-label="Paste a video link"
-          />
-          <!-- File input for local upload -->
-          <input
-            type="file"
-            id="videoUpload"
-            accept="video/*"
-            aria-label="Upload your video"
           />
           <button id="processBtn">Generate short</button>
         </div>
