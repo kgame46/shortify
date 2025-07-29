@@ -18,7 +18,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressElem = progressBar.querySelector('.progress');
   const resultContainer = document.getElementById('result');
   const outputVideo = document.getElementById('outputVideo');
-  const downloadLink = document.getElementById('downloadLink');
+      // Attach click handlers to pricing plan buttons
+  const pricingPlans = document.querySelectorAll('.pricing-plans .plan');
+  pricingPlans.forEach(plan => {
+    const btn = plan.querySelector('button');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        const planNameElem = plan.querySelector('h3');
+        const planName = planNameElem ? planNameElem.textContent.trim() : '';
+        alert('You selected the ' + planName + ' plan!');
+        const uploadSection = document.getElementById('upload');
+        if (uploadSection) {
+          uploadSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    }
+  });
+coconst downloadLink = document.getElementById('downloadLink');
 
   // Display progress bar and update width
   function showProgress(ratio) {
