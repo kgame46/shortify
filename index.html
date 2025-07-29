@@ -501,8 +501,16 @@ footer {
       <!-- Upload Section -->
       <section id="upload" class="upload">
         <h2>Get your short in seconds</h2>
-        <p>Upload a video and let Shortify do the rest. No sign‑up required.</p>
+        <p>Upload a video or paste a link and let Shortify do the rest. No sign‑up required.</p>
         <div class="upload-form">
+          <!-- Text input for a video link (e.g. YouTube) -->
+          <input
+            type="text"
+            id="videoUrlInput"
+            placeholder="Paste video URL (e.g. YouTube)"
+            aria-label="Paste a video link"
+          />
+          <!-- File input for local upload -->
           <input
             type="file"
             id="videoUpload"

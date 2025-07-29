@@ -214,6 +214,17 @@ section h2 {
   width: 100%;
   max-width: 350px;
 }
+
+/* Style the URL input similarly to the file input */
+.upload-form input[type="text"] {
+  padding: 0.5rem;
+  border: 1px solid #3b3f58;
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  width: 100%;
+  max-width: 350px;
+}
 .upload-form button {
   background: var(--color-primary);
   color: var(--color-bg);
