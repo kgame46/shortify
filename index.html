@@ -206,21 +206,83 @@ section h2 {
   font-size: 1.125rem;
   color: var(--color-muted);
 }
+/* Layout for the upload form: arrange inputs and button horizontally on large screens and wrap on small screens */
+/* Upload form: single dashed container containing file label and URL input */
 .upload-form {
   display: flex;
-  flex-direction: column;
   align-items: center;
   gap: 1rem;
+  border: 2px dashed var(--color-primary);
+  border-radius: 0.5rem;
+  background: var(--color-panel);
+  padding: 0.75rem 1rem;
   margin-bottom: 1rem;
 }
-.upload-form input[type="file"] {
-  padding: 0.5rem;
-  border: 1px solid #3b3f58;
-  border-radius: 0.5rem;
-  background: var(--color-surface);
+
+/* Label for file input acts like a button but matches the container background */
+.upload-form .file-input-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  background: var(--color-panel);
   color: var(--color-text);
+  border-radius: 0.375rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.upload-form .file-input-label input[type="file"] {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  max-width: 350px;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.upload-form .file-input-label span {
+  pointer-events: none;
+}
+
+/* Unified upload box styles */
+.upload-box {
+  border: 2px dashed var(--color-primary);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  background: var(--color-panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-box input[type="text"] {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--color-text);
+  font-size: 1rem;
+  outline: none;
+}
+
+.upload-box input[type="text"]::placeholder {
+  color: var(--color-muted);
+}
+
+/* Style the URL input similarly to the file input */
+/* Style for the URL input */
+/* URL input shares the same container background; no additional border */
+.upload-form input[type="text"] {
+  flex: 1 1 250px;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: var(--color-panel);
+  color: var(--color-text);
+  min-width: 200px;
 }
 .upload-form button {
   background: var(--color-primary);
@@ -502,8 +564,9 @@ footer {
       <section id="upload" class="upload">
         <h2>Get your short in seconds</h2>
         <p>Upload a video or paste a link and let Shortify do the rest. No sign‑up required.</p>
+        <!-- Unified upload form: file button on the left and URL input on the right -->
         <div class="upload-form">
-          <!-- File input for local uploads -->
+          <!-- File input for local uploads; wrapped in a label so the button can be styled -->
           <label class="file-input-label">
             <input
               type="file"
@@ -513,7 +576,7 @@ footer {
             />
             <span>Select file</span>
           </label>
-          <!-- Text input for a direct video link (e.g. YouTube) -->
+          <!-- Text input for a direct video link (e.g. a direct MP4 link) -->
           <input
             type="text"
             id="videoUrlInput"
@@ -626,7 +689,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const { createFFmpeg, fetchFile } = FFmpeg;
   const ffmpeg = createFFmpeg({ log: true });
 
-  const uploadInput = document.getElementById('videoUpload');
+  // Separate inputs: file upload and URL input
+  const fileInput = document.getElementById('videoUpload');
+  const textInput = document.getElementById('videoUrlInput');
   const processButton = document.getElementById('processBtn');
   const progressBar = document.getElementById('progressBar');
   const progressElem = progressBar.querySelector('.progress');
@@ -640,13 +705,55 @@ document.addEventListener('DOMContentLoaded', () => {
     progressElem.style.width = `${(ratio * 100).toFixed(2)}%`;
   }
 
+  // When a user selects a file, clear the URL input and optionally display the file name
+  if (fileInput && textInput) {
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files && fileInput.files.length > 0) {
+        const selected = fileInput.files[0];
+        // Display the selected file name for clarity
+        textInput.value = '';
+        fileInput.nextElementSibling.textContent = selected.name;
+      } else {
+        // Reset label if no file selected
+        fileInput.nextElementSibling.textContent = 'Select file';
+      }
+    });
+  }
+
   processButton.addEventListener('click', async () => {
-    // validate file selection
-    if (!uploadInput.files || uploadInput.files.length === 0) {
-      alert('Please select a video to process.');
+    // Validate that either a file or a URL has been provided
+    const fileSelected = fileInput && fileInput.files && fileInput.files.length > 0;
+    const urlProvided = textInput && textInput.value.trim() !== '';
+    if (!fileSelected && !urlProvided) {
+      alert('Please select a video to process or paste a video link.');
       return;
     }
-    const file = uploadInput.files[0];
+    let file;
+    if (fileSelected) {
+      // Use the uploaded file directly
+      file = fileInput.files[0];
+    } else {
+      // Attempt to fetch the video from the provided URL
+      const videoUrl = textInput.value.trim();
+      try {
+        const response = await fetch(videoUrl);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const blob = await response.blob();
+        // Derive a filename from the URL or default to input.mp4
+        const urlParts = videoUrl.split('/');
+        const lastPart = urlParts[urlParts.length - 1] || 'input.mp4';
+        const filename = lastPart.includes('.') ? lastPart : `${lastPart}.mp4`;
+        file = new File([blob], filename, { type: blob.type || 'video/mp4' });
+      } catch (err) {
+        console.error(err);
+        alert('Unable to fetch video from the provided URL. Please ensure the link is direct to a video file or try another link.');
+        processButton.disabled = false;
+        processButton.textContent = 'Generate short';
+        return;
+      }
+    }
     // disable UI while working
     processButton.disabled = true;
     processButton.textContent = 'Processing...';
@@ -698,6 +805,27 @@ document.addEventListener('DOMContentLoaded', () => {
         progressBar.style.display = 'none';
         progressElem.style.width = '0%';
       }, 1000);
+    }
+  });
+
+  // Attach click handlers to pricing plan buttons. Each plan has a button within
+  // its `.plan` container. When a user selects a plan we provide immediate
+  // feedback and scroll them to the upload section.
+  const pricingPlans = document.querySelectorAll('.pricing-plans .plan');
+  pricingPlans.forEach(plan => {
+    const btn = plan.querySelector('button');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        // Find the plan name from the heading inside the plan container.
+        const planNameElem = plan.querySelector('h3');
+        const planName = planNameElem ? planNameElem.textContent.trim() : '';
+        alert('You selected the ' + planName + ' plan!');
+        // Smoothly scroll to the upload section so the user can start uploading a video.
+        const uploadSection = document.getElementById('upload');
+        if (uploadSection) {
+          uploadSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
     }
   });
 });
